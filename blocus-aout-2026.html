@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blocus — août 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14181c;
+  --ink-soft:#4a5158;
+  --paper:#e7e9e4;
+  --card:#f4f5f1;
+  --rule:#c9cec5;
+  --tfb:#6d3ba6;
+  --a2:#146b5b;
+  --a3:#1b4fa8;
+  --vie:#7c8279;
+  --alert:#b3261e;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  background-image:
+    linear-gradient(to right,rgba(20,24,28,.045) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(20,24,28,.045) 1px,transparent 1px);
+  background-size:26px 26px;
+  color:var(--ink);
+  font-family:var(--serif);
+  font-size:16px;
+  line-height:1.45;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:860px;margin:0 auto;padding:18px 14px 120px}
+h1,h2,h3,.mono,.eyebrow,button,select,input{font-family:var(--mono)}
+.eyebrow{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
+
+/* ---------- header ---------- */
+header.top{padding:10px 0 6px}
+h1{font-size:15px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;margin:4px 0 12px}
+.next{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-top:2px solid var(--ink);padding-top:10px}
+.next .big{font-family:var(--mono);font-size:44px;font-weight:600;line-height:.9;letter-spacing:-.03em}
+.next .unit{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft)}
+.next .what{font-size:15px}
+.deadlist{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 0;font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--ink-soft)}
+.deadlist b{color:var(--ink);font-weight:600}
+
+/* ---------- la bande (signature) ---------- */
+.bande{margin:18px 0 6px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:12px 0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.bande-inner{display:flex;gap:3px;align-items:flex-end;min-width:100%}
+.tick{flex:1 1 0;min-width:13px;background:none;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:stretch;gap:3px}
+.tick .bar{position:relative;height:52px;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(20,24,28,.06)}
+.tick .fill{width:100%;background:var(--ink)}
+.tick .over{position:absolute;top:0;left:0;right:0;height:3px;background:var(--alert)}
+.tick .lbl{font-family:var(--mono);font-size:8.5px;color:var(--ink-soft);text-align:center}
+.tick.off .bar{background:repeating-linear-gradient(45deg,rgba(20,24,28,.05) 0 3px,transparent 3px 6px);}
+.tick.dead .lbl{color:var(--alert);font-weight:600}
+.tick.today .lbl{background:var(--ink);color:var(--card)}
+.bande-key{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--ink-soft);text-transform:uppercase}
+
+/* ---------- controls ---------- */
+.bar-controls{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 10px;align-items:center}
+button{font-size:11px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--ink);background:transparent;color:var(--ink);padding:6px 10px;cursor:pointer;border-radius:0}
+button:focus-visible,.tick:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--tfb);outline-offset:2px}
+button.on{background:var(--ink);color:var(--card)}
+button.ghost{border-color:var(--rule);color:var(--ink-soft)}
+button.tiny{font-size:10px;padding:4px 7px}
+.chip-tfb.on{background:var(--tfb);border-color:var(--tfb)}
+.chip-a2.on{background:var(--a2);border-color:var(--a2)}
+.chip-a3.on{background:var(--a3);border-color:var(--a3)}
+.chip-vie.on{background:var(--vie);border-color:var(--vie)}
+
+/* ---------- day cards ---------- */
+.day{background:var(--card);border:1px solid var(--rule);margin:0 0 10px;scroll-margin-top:12px}
+.day.is-today{border-color:var(--ink);border-width:2px}
+.day.is-off{background:transparent;border-style:dashed}
+.day-head{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-bottom:1px solid var(--rule);cursor:pointer}
+.day.collapsed .day-head{border-bottom:0}
+.day.collapsed .tasks,.day.collapsed .empty{display:none}
+.task .body{cursor:pointer}
+.mat li span:last-child{cursor:pointer}
+.day-date{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.day-date span{display:block;font-weight:400;color:var(--ink-soft);font-size:9.5px;letter-spacing:.1em}
+.day-meta{margin-left:auto;text-align:right;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--ink-soft);white-space:nowrap}
+.load{height:3px;background:rgba(20,24,28,.12);margin-top:5px;width:74px;margin-left:auto}
+.load i{display:block;height:100%;background:var(--ink)}
+.load.over i{background:var(--alert)}
+.flag{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:2px 5px;border:1px solid currentColor;margin:3px 4px 0 0}
+.flag.dead{color:var(--alert);background:rgba(179,38,30,.07)}
+.flag.work{color:var(--ink-soft)}
+.tasks{list-style:none;margin:0;padding:2px 0}
+.task{display:flex;gap:9px;align-items:flex-start;padding:7px 12px;border-bottom:1px solid rgba(201,206,197,.55)}
+.task:last-child{border-bottom:0}
+.task .box{flex:0 0 auto;width:17px;height:17px;border:1.5px solid var(--ink-soft);background:transparent;padding:0;margin-top:2px;cursor:pointer}
+.task.done .box{background:var(--ink);border-color:var(--ink);position:relative}
+.task.done .box::after{content:"";position:absolute;left:4px;top:1px;width:5px;height:10px;border:solid var(--card);border-width:0 2px 2px 0;transform:rotate(42deg)}
+.task .body{flex:1 1 auto;min-width:0}
+.task .t{font-size:15px;line-height:1.3}
+.task.done .t{text-decoration:line-through;color:var(--ink-soft)}
+.task .sub{font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);margin-top:3px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tag{display:inline-block;padding:1px 5px;color:#fff;font-weight:500}
+.tag.tfb{background:var(--tfb)}.tag.a2{background:var(--a2)}.tag.a3{background:var(--a3)}.tag.vie{background:var(--vie)}
+.task .acts{display:flex;gap:4px;flex:0 0 auto;opacity:.55}
+.task .acts button{border:0;padding:3px 5px;font-size:11px;color:var(--ink-soft)}
+.empty{padding:12px;font-size:14px;color:var(--ink-soft);font-style:italic}
+
+/* ---------- par matière ---------- */
+.mat{background:var(--card);border:1px solid var(--rule);padding:12px;margin-bottom:10px}
+.mat h3{font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 4px}
+.mat .prog{height:6px;background:rgba(20,24,28,.1);margin:8px 0 10px}
+.mat .prog i{display:block;height:100%}
+.mat ul{list-style:none;margin:0;padding:0}
+.mat li{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(201,206,197,.5);font-size:14px}
+.mat li .d{font-family:var(--mono);font-size:9.5px;color:var(--ink-soft);flex:0 0 46px;padding-top:3px}
+.mat li.done{color:var(--ink-soft);text-decoration:line-through}
+
+/* ---------- add panel ---------- */
+.addbar{position:fixed;left:0;right:0;bottom:0;background:var(--ink);padding:10px 14px calc(10px + env(safe-area-inset-bottom));display:flex;gap:8px;z-index:20}
+.addbar button{border-color:var(--card);color:var(--card);flex:1 1 auto}
+.addbar button.primary{background:var(--card);color:var(--ink)}
+.panel{position:fixed;inset:0;background:rgba(20,24,28,.45);z-index:30;display:none;align-items:flex-end}
+.panel.open{display:flex}
+.panel-in{background:var(--card);width:100%;max-height:88vh;overflow:auto;padding:16px 14px calc(20px + env(safe-area-inset-bottom));border-top:3px solid var(--ink)}
+@media(min-width:700px){.panel{align-items:center;justify-content:center}.panel-in{max-width:520px;border:2px solid var(--ink)}}
+label{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin:12px 0 4px}
+input,select,textarea{width:100%;padding:9px;border:1px solid var(--ink);background:transparent;font-size:15px;font-family:var(--serif);border-radius:0}
+input[type=number]{font-family:var(--mono)}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.note{font-size:13px;color:var(--ink-soft);line-height:1.4;margin-top:14px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:no-preference){.day,.tick .fill{transition:all .18s ease}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">Blocus · seconde session · ULiège FaSS</div>
+  <h1>TFB · Anglais 2 · Anglais 3</h1>
+  <div class="next">
+    <div><span class="big" id="cd">–</span> <span class="unit">jours</span></div>
+    <div class="what" id="cdWhat">—</div>
+  </div>
+  <div class="deadlist" id="deadlist"></div>
+</header>
+
+<section class="bande" aria-label="Charge de travail jour par jour">
+  <div class="bande-inner" id="bande"></div>
+</section>
+<div class="bande-key">
+  <span>barre pleine = charge planifiée</span><span>trait rouge = jour surchargé</span><span>hachuré = jour off</span>
+</div>
+
+<div class="bar-controls" id="filters">
+  <button class="chip-tfb on" data-m="tfb">TFB</button>
+  <button class="chip-a2 on" data-m="a2">Anglais 2</button>
+  <button class="chip-a3 on" data-m="a3">Anglais 3</button>
+  <button class="chip-vie on" data-m="vie">Autre</button>
+  <button class="ghost" id="tglDone">Masquer le fait</button>
+  <button class="ghost" id="tglPast">Voir les jours passés</button>
+</div>
+<div class="bar-controls">
+  <button id="vDay" class="on">Jour par jour</button>
+  <button id="vMat" class="ghost">Par matière</button>
+</div>
+
+<div class="eyebrow" style="margin:0 0 8px">Touche une tâche pour la modifier · → la reporte au lendemain</div>
+<main id="main"></main>
+
+<p class="note" id="stats"></p>
+</div>
+
+<div class="addbar">
+  <button class="primary" id="openAdd">+ Ajouter une tâche</button>
+  <button id="openTools">Outils</button>
+</div>
+
+<div class="panel" id="addPanel">
+  <div class="panel-in">
+    <div class="eyebrow" id="panelTitle">Nouvelle tâche</div>
+    <label for="fT">Ce qu'il y a à faire</label>
+    <input id="fT" type="text" placeholder="Ex. : relire le chapitre 3 de $2 a Day">
+    <div class="row">
+      <div><label for="fD">Jour</label><select id="fD"></select></div>
+      <div><label for="fM">Matière</label><select id="fM">
+        <option value="tfb">TFB</option><option value="a2">Anglais 2</option>
+        <option value="a3">Anglais 3</option><option value="vie">Autre</option>
+      </select></div>
+    </div>
+    <label for="fMin">Durée estimée (minutes)</label>
+    <input id="fMin" type="number" min="5" step="5" value="60">
+    <div class="row" style="margin-top:16px">
+      <button class="primary" id="saveTask" style="background:var(--ink);color:var(--card)">Ajouter</button>
+      <button class="ghost" id="delTask" style="display:none">Supprimer</button>
+      <button class="ghost" id="closeAdd">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="toolsPanel">
+  <div class="panel-in">
+    <div class="eyebrow">Outils</div>
+    <div class="row" style="margin-top:12px"><button id="expBtn">Exporter en JSON</button></div>
+    <label for="impBox">Importer un JSON</label>
+    <textarea id="impBox" rows="4" placeholder="Colle ici un export précédent"></textarea>
+    <div class="row" style="margin-top:8px"><button id="impBtn">Importer</button></div>
+    <label>Repartir de zéro</label>
+    <div class="row"><button class="ghost" id="resetBtn">Recharger le plan de base</button></div>
+    <p class="note">Le plan de base efface tes ajouts et tes cases cochées. Exporte avant si tu veux les garder.</p>
+    <div class="row" style="margin-top:14px"><button class="ghost" id="closeTools">Fermer</button></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============ stockage : window.storage (Claude) sinon localStorage (GitHub Pages) ============ */
+const KEY = "blocus-aout-2026";
+const store = {
+  async get(){
+    try{ if(window.storage){ const r = await window.storage.get(KEY,false); return r&&r.value?JSON.parse(r.value):null; } }catch(e){}
+    try{ const v = window.localStorage.getItem(KEY); return v?JSON.parse(v):null; }catch(e){ return null; }
+  },
+  async set(obj){
+    const s = JSON.stringify(obj);
+    try{ if(window.storage){ await window.storage.set(KEY,s,false); return; } }catch(e){}
+    try{ window.localStorage.setItem(KEY,s); }catch(e){}
+  }
+};
+
+/* ============ calendrier ============ */
+const START="2026-07-29", END="2026-09-04";
+const META={
+ "2026-07-30":{work:1},"2026-07-31":{work:1},
+ "2026-08-01":{off:"Anniversaire — soirée prise",cap:180},
+ "2026-08-04":{off:"Parc d'attractions",cap:0},
+ "2026-08-05":{mile:"RDV promoteur, 11h"},
+ "2026-08-06":{mile:"Entretien 1"},
+ "2026-08-08":{work:1},
+ "2026-08-09":{mile:"Entretien 2 (à confirmer)"},
+ "2026-08-12":{work:1},
+ "2026-08-17":{dead:"Remise du TFB"},
+ "2026-08-19":{work:1},
+ "2026-08-21":{dead:"Écrit Anglais 2"},
+ "2026-08-24":{dead:"Écrit Anglais 3"},
+ "2026-08-28":{work:1},
+ "2026-09-03":{dead:"Oral Anglais 2"},
+ "2026-09-04":{dead:"Oral Anglais 3"}
+};
+const MATS={tfb:{n:"TFB",c:"var(--tfb)"},a2:{n:"Anglais 2",c:"var(--a2)"},a3:{n:"Anglais 3",c:"var(--a3)"},vie:{n:"Autre",c:"var(--vie)"}};
+const JOURS=["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+const MOIS=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+const d2 = n => String(n).padStart(2,"0");
+function toDate(s){ const p=s.split("-"); return new Date(+p[0],+p[1]-1,+p[2]); }
+function iso(d){ return d.getFullYear()+"-"+d2(d.getMonth()+1)+"-"+d2(d.getDate()); }
+const DAYS=(()=>{const out=[];let d=toDate(START);const e=toDate(END);while(d<=e){out.push(iso(d));d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);}return out;})();
+function capOf(k){ const m=META[k]||{}; if(m.cap!==undefined) return m.cap; if(m.dead) return 150; if(m.mile) return 240; if(m.work) return 270; return 360; }
+function todayKey(){ const t=iso(new Date()); if(t<START) return START; if(t>END) return END; return t; }
+
+/* ============ plan de base ============ */
+/* [jour, matière, intitulé, minutes] */
+const SEED=[
+["2026-07-29","tfb","Compte-rendu zéro, une page max : mes questions, mes attentes, mes présupposés",30],
+["2026-07-29","tfb","Confirmer les deux entretiens et fixer une date ferme pour le second",30],
+["2026-07-29","tfb","Guide d'entretien version 1",60],
+["2026-07-29","a2","Anglais 2 : faire extraire le voc des Units 1-3 par l'IA depuis le syllabus, vérifier mot à mot, importer dans ton app",60],
+["2026-07-29","tfb","Dehet, L'antifascisme — première moitié + fiche de lecture",90],
+["2026-07-30","tfb","Dehet — seconde moitié + fiche des concepts mobilisables",100],
+["2026-07-30","tfb","Micro-analyse express : 30 min chrono sur une page, juste pour décoller de mes présupposés",30],
+["2026-07-30","a3","Anglais 3 : extraire le voc des chapitres 1-2 (CNBC, terminology, genre), vérifier, importer",45],
+["2026-07-30","a2","Anglais 2 : Units 4-6 par le même procédé → la liste est complète",45],
+["2026-07-31","tfb","Biblio : repérer les 10 textes, lire les résumés, garder les 5 vraiment utiles",120],
+["2026-07-31","tfb","Guide d'entretien version 2 (relances, ordre des thèmes)",40],
+["2026-07-31","a2","Première session de rappel actif : Units 1-3",45],
+["2026-08-01","a2","Rappel actif : Units 4-6",45],
+["2026-08-01","tfb","Relire les fiches de Dehet et surligner ce qui peut nourrir le cadre théorique",45],
+["2026-08-02","tfb","Lire les 3 textes clés + une fiche courte pour chacun",120],
+["2026-08-02","tfb","Cadre théorique version 0 (2-3 pages, même bancal)",90],
+["2026-08-02","a3","Écoute : NPR, One-Child Policy — gap-fill et vrai/faux",45],
+["2026-08-02","a2","Refaire deux listenings du cours",45],
+["2026-08-02","a3","Anglais 3 : extraire le voc des chapitres 3-5 + word building, vérifier, importer",45],
+["2026-08-03","tfb","Lire les textes restants + fiches courtes",90],
+["2026-08-03","tfb","Matériaux et méthodes : 1,5 à 2 pages à partir de Lejeune",90],
+["2026-08-03","a2","Reprise des mots ratés, Units 1-6",45],
+["2026-08-03","tfb","Préparer le RDV de mercredi : une page avec la question de recherche, le guide d'entretien, le plan du travail et les points à trancher",45],
+["2026-08-03","a2","GABi : comparatifs et propositions relatives",60],
+["2026-08-04","vie","Parc d'attractions — aucune tâche, et c'est voulu",0],
+["2026-08-05","tfb","RDV PROMOTEUR 11h : valider la question de recherche, le nombre et le type d'entretiens, et la version allégée de la méthode",60],
+["2026-08-05","tfb","Noter ses retours dans le journal de bord juste après, avant d'oublier",20],
+["2026-08-05","tfb","Répéter le guide à voix haute + matériel (enregistreur, consentement, anonymat)",45],
+["2026-08-05","tfb","Cadre théorique version 1 : intégrer les lectures",90],
+["2026-08-05","a2","Grammaire : temps du passé et voix passive",60],
+["2026-08-05","a3","Écoute Wyman + prépositions et phrasal verbs",45],
+["2026-08-06","tfb","ENTRETIEN 1",120],
+["2026-08-06","tfb","Notes à chaud dans l'heure qui suit : ce qui m'a surpris, ce que je n'ai pas compris",30],
+["2026-08-06","tfb","Lancer la transcription automatique + première réécoute",60],
+["2026-08-07","tfb","Transcription utile : nettoyer les passages exploitables, timecodes pour le reste",120],
+["2026-08-07","tfb","Étiquetage de l'entretien 1 (verbes, expérience vécue)",120],
+["2026-08-07","a2","Rédaction chronométrée : un texte compare / contrast",45],
+["2026-08-07","a3","Rappel actif chapitres 1-2 + registre formel / informel",45],
+["2026-08-08","tfb","Révision expérientielle des étiquettes : remplacer les étiquettes thématiques",60],
+["2026-08-08","tfb","Note de codage : ce qui ressort, ce qu'il faut creuser au second entretien",30],
+["2026-08-08","a2","Étudier le voc Units 1-3 (rappel actif, pas relecture)",90],
+["2026-08-09","tfb","ENTRETIEN 2",120],
+["2026-08-09","tfb","Notes à chaud",30],
+["2026-08-09","tfb","Transcription automatique + première réécoute",60],
+["2026-08-10","tfb","Transcription utile de l'entretien 2",100],
+["2026-08-10","tfb","Étiquetage de l'entretien 2",120],
+["2026-08-10","a3","Rappel actif chapitres 3-5",45],
+["2026-08-10","a2","Étudier le voc Units 4-6",90],
+["2026-08-11","tfb","Table des propriétés : les deux situations en lignes, les propriétés en colonnes",90],
+["2026-08-11","tfb","Repérer les contrastes entre les deux entretiens et nommer les cas de figure",60],
+["2026-08-11","tfb","Schéma intégré sur papier + scénario analytique = plan détaillé du travail",90],
+["2026-08-11","a3","Écoute : Dollar Street et Goffman",45],
+["2026-08-12","tfb","Rédiger la présentation des matériaux",90],
+["2026-08-12","tfb","Analyses et résultats, partie 1",90],
+["2026-08-13","tfb","Analyses et résultats, partie 2 + confrontation à la littérature",180],
+["2026-08-13","tfb","Conclusion : synthèse, réponse à la question, limites, perspectives",60],
+["2026-08-13","a2","Mini-blanc : un sight text + une écoute, corrigés",60],
+["2026-08-14","tfb","Introduction (écrite en dernier) + titre sans point final",90],
+["2026-08-14","tfb","Relecture : quantification implicite, jargon méthodologique, nous de modestie",90],
+["2026-08-14","a3","APA, paraphrase en 6 étapes, reporting verbs",90],
+["2026-08-15","tfb","Résumé de 250 mots + 4-6 mots-clés",45],
+["2026-08-15","tfb","Références APA + citations dans le corps du texte",75],
+["2026-08-15","tfb","Mise en forme : TNR 12, interligne 1,5, marges 2,5, extraits en italique et anonymisés",75],
+["2026-08-15","a2","Grammaire : conditionnels, I wish / if only, modaux",60],
+["2026-08-16","tfb","Page de garde, table des matières, pagination",40],
+["2026-08-16","tfb","Relecture à voix haute",90],
+["2026-08-16","tfb","Export PDF, nom du fichier : nom, prénom, matricule, TFB",20],
+["2026-08-16","a3","Lecture : CNBC + Should Flogging Be an Alternative to Prison?",60],
+["2026-08-17","tfb","Dépôt sur Ultra + mail au promoteur (même objet que le nom du fichier)",45],
+["2026-08-17","a2","Inventaire de ce qui reste et plan des quatre jours",45],
+["2026-08-17","a2","Reprendre les listenings les moins réussis",60],
+["2026-08-18","a2","Voc : reprise complète en rappel actif",120],
+["2026-08-18","a2","Grammaire : voix passive, faire-faire, discours indirect",90],
+["2026-08-18","a2","Écoute : trois listenings du cours",75],
+["2026-08-18","a2","Rédaction chronométrée : réaction argumentée de 150 mots",45],
+["2026-08-19","a2","Voc : uniquement les mots ratés",75],
+["2026-08-19","a2","Synthèse de grammaire du cours, relecture active",90],
+["2026-08-19","a2","Un sight text : gap-fill, vrai/faux/non mentionné",45],
+["2026-08-20","a2","Examen blanc complet en conditions réelles",180],
+["2026-08-20","a2","Correction et reprise des erreurs",90],
+["2026-08-20","a2","Dernier passage sur le voc fragile",60],
+["2026-08-21","a2","ÉCRIT ANGLAIS 2",0],
+["2026-08-21","a3","Inventaire Anglais 3 et plan des trois jours",45],
+["2026-08-21","a3","Étudier le voc chapitres 1-2",90],
+["2026-08-22","a3","Voc chapitres 3-5 + word building",120],
+["2026-08-22","a3","Écoute : NPR, Wyman, Dollar Street, Goffman, Ken Robinson",120],
+["2026-08-22","a3","Décrire un graphique (divorces ONS) + linking words for trends",60],
+["2026-08-22","a3","Lecture : digital literacy + le coût des études",60],
+["2026-08-23","a3","Examen blanc : écoute + écriture + lecture en conditions réelles",180],
+["2026-08-23","a3","Correction et reprise",75],
+["2026-08-23","a3","Essai argumentatif chronométré (poverty measures) avec APA",60],
+["2026-08-23","a3","Voc : uniquement les mots ratés",45],
+["2026-08-24","a3","ÉCRIT ANGLAIS 3",0],
+["2026-08-24","a2","Rouvrir Evicted, lecture tranquille l'après-midi",60],
+["2026-08-25","a2","Evicted : relire résumés et synthèses (première partie)",120],
+["2026-08-25","a2","Evicted : liste de voc pour l'oral (30-40 termes)",90],
+["2026-08-25","a3","$2 a Day : relire les cartes MarginNote, chapitres 1-2",90],
+["2026-08-26","a2","Evicted : résumés seconde partie + personnages et chronologie",120],
+["2026-08-26","a2","Evicted : 8-10 questions probables et leurs réponses en anglais",120],
+["2026-08-26","a3","$2 a Day : cartes chapitres 3-4",60],
+["2026-08-27","a3","$2 a Day : synthèse par chapitre + concepts clés (SNAP, seuil des 2 $, cash poverty)",150],
+["2026-08-27","a3","$2 a Day : liste de voc pour l'oral",90],
+["2026-08-27","a2","Evicted : résumé de 5 minutes à voix haute, sans notes",45],
+["2026-08-28","a3","$2 a Day : questions probables et réponses",120],
+["2026-08-28","a2","Evicted : reprise du voc à voix haute",60],
+["2026-08-29","a2","Oral blanc Evicted : s'enregistrer puis se réécouter",90],
+["2026-08-29","a2","Corriger prononciation, fluidité, hedging",60],
+["2026-08-29","a3","$2 a Day : relire les passages clés",90],
+["2026-08-30","a3","Oral blanc $2 a Day : s'enregistrer puis se réécouter",90],
+["2026-08-30","a2","Reprise croisée des deux listes de voc",60],
+["2026-08-31","a2","Evicted : dernier passage complet (résumé, voc, questions)",150],
+["2026-08-31","vie","Shadowing ou 30 min de conversation en anglais",45],
+["2026-09-01","a3","$2 a Day : dernier passage complet",150],
+["2026-09-01","vie","Shadowing ou conversation en anglais",45],
+["2026-09-02","a2","Révision croisée légère des deux livres",120],
+["2026-09-02","vie","Vérifier heure, local, ce qui est autorisé — puis se coucher tôt",20],
+["2026-09-03","a2","Relire la liste de voc Evicted avant d'entrer",45],
+["2026-09-03","a2","ORAL ANGLAIS 2",0],
+["2026-09-03","a3","Reprise ciblée $2 a Day l'après-midi",90],
+["2026-09-04","a3","Relire le voc + résumé à voix haute",45],
+["2026-09-04","a3","ORAL ANGLAIS 3",0]
+];
+const seedTasks = () => SEED.map((t,i)=>({id:"s"+i,day:t[0],mat:t[1],title:t[2],min:t[3],done:false}));
+
+/* ============ état ============ */
+let state={tasks:seedTasks()};
+let view="day", filters={tfb:1,a2:1,a3:1,vie:1}, hideDone=false, showPast=false;
+const $ = s => document.querySelector(s);
+
+async function boot(){
+  const saved = await store.get();
+  if(saved && Array.isArray(saved.tasks) && saved.tasks.length) state=saved;
+  fillDaySelect(); render();
+}
+const save = () => store.set(state);
+
+/* ============ rendu ============ */
+function fmtMin(m){ if(!m) return "—"; const h=Math.floor(m/60),r=m%60; return h?(r?h+"h"+d2(r):h+"h"):r+" min"; }
+function labelDay(k){ const d=toDate(k); return JOURS[d.getDay()]+" "+d.getDate()+" "+MOIS[d.getMonth()]; }
+function tasksOf(k){ return state.tasks.filter(t=>t.day===k); }
+function loadOf(k){ return tasksOf(k).reduce((s,t)=>s+(t.done?0:t.min),0); }
+
+function render(){ renderHead(); renderBande(); view==="day"?renderDays():renderMats(); renderStats(); }
+
+function renderHead(){
+  const tk=todayKey();
+  const next=DAYS.filter(k=>k>=tk&&META[k]&&META[k].dead)[0];
+  if(next){
+    const n=Math.round((toDate(next)-toDate(tk))/864e5);
+    $("#cd").textContent=n; $("#cdWhat").textContent=META[next].dead+" — "+labelDay(next);
+  }
+  $("#deadlist").innerHTML=DAYS.filter(k=>META[k]&&META[k].dead).map(k=>{
+    const n=Math.round((toDate(k)-toDate(todayKey()))/864e5);
+    return "<span><b>"+META[k].dead+"</b> "+k.slice(8)+"/"+k.slice(5,7)+(n>=0?" · J−"+n:" · passé")+"</span>";
+  }).join("");
+}
+
+function renderBande(){
+  const max=Math.max(180,...DAYS.map(loadOf)), tk=todayKey();
+  $("#bande").innerHTML=DAYS.map(k=>{
+    const m=META[k]||{}, load=loadOf(k), cap=capOf(k);
+    const h=Math.min(100,Math.round(load/max*100));
+    const cls=["tick"]; if(m.off)cls.push("off"); if(m.dead)cls.push("dead"); if(k===tk)cls.push("today");
+    const dom=domMat(k);
+    return '<button class="'+cls.join(" ")+'" data-go="'+k+'" title="'+labelDay(k)+" · "+fmtMin(load)+'">'+
+      '<span class="bar">'+(load>cap?'<i class="over"></i>':'')+
+      '<i class="fill" style="height:'+h+'%;background:'+(dom?MATS[dom].c:"var(--ink)")+'"></i></span>'+
+      '<span class="lbl">'+toDate(k).getDate()+'</span></button>';
+  }).join("");
+  document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{
+    if(view!=="day"){view="day";render();}
+    const el=document.getElementById("d"+b.dataset.go);
+    if(el){el.classList.remove("collapsed");el.scrollIntoView({behavior:"smooth",block:"start"});}
+  });
+}
+function domMat(k){ const s={}; tasksOf(k).forEach(t=>s[t.mat]=(s[t.mat]||0)+t.min); return Object.keys(s).sort((a,b)=>s[b]-s[a])[0]; }
+
+function renderDays(){
+  const tk=todayKey();
+  const list=DAYS.filter(k=>showPast||k>=tk);
+  $("#main").innerHTML=list.map(k=>{
+    const m=META[k]||{}, all=tasksOf(k);
+    const shown=all.filter(t=>filters[t.mat]&&(!hideDone||!t.done));
+    const load=loadOf(k), cap=capOf(k), pct=cap?Math.min(100,Math.round(load/cap*100)):(load?100:0);
+    const flags=[m.dead?'<span class="flag dead">'+m.dead+'</span>':'',
+                 m.mile?'<span class="flag">'+m.mile+'</span>':'',
+                 m.work?'<span class="flag work">Travail dès 16h</span>':'',
+                 m.off?'<span class="flag work">'+m.off+'</span>':''].join("");
+    const done=all.filter(t=>t.done).length;
+    return '<section class="day'+(k===tk?" is-today":"")+(m.off?" is-off":"")+'" id="d'+k+'">'+
+      '<div class="day-head" data-tgl="'+k+'">'+
+        '<div class="day-date">'+labelDay(k)+'<span>'+(k===tk?"aujourd'hui":"")+'</span>'+flags+'</div>'+
+        '<div class="day-meta">'+fmtMin(load)+' / '+fmtMin(cap)+'<br>'+done+'/'+all.length+' fait'+
+          '<span class="load'+(load>cap?" over":"")+'"><i style="width:'+pct+'%"></i></span></div>'+
+      '</div>'+
+      (shown.length?'<ul class="tasks">'+shown.map(taskRow).join("")+'</ul>'
+        :'<p class="empty">'+(all.length?"Rien à afficher avec ces filtres.":"Journée libre — à toi de la remplir.")+'</p>')+
+    '</section>';
+  }).join("");
+  bindTasks();
+  document.querySelectorAll("[data-tgl]").forEach(h=>h.onclick=e=>{
+    if(e.target.closest("button"))return; h.parentElement.classList.toggle("collapsed");
+  });
+}
+
+function taskRow(t){
+  return '<li class="task'+(t.done?" done":"")+'">'+
+    '<button class="box" data-chk="'+t.id+'" aria-label="Cocher"></button>'+
+    '<div class="body" data-edit="'+t.id+'" role="button" tabindex="0"><div class="t">'+esc(t.title)+'</div>'+
+      '<div class="sub"><span class="tag '+t.mat+'">'+MATS[t.mat].n+'</span><span>'+fmtMin(t.min)+'</span></div></div>'+
+    '<div class="acts"><button data-push="'+t.id+'" title="Reporter à demain">→</button>'+
+      '<button data-del="'+t.id+'" title="Supprimer">×</button></div></li>';
+}
+function bindEditable(){
+  document.querySelectorAll("[data-edit]").forEach(el=>{
+    el.onclick=()=>openEdit(el.dataset.edit);
+    el.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openEdit(el.dataset.edit); } };
+  });
+}
+function bindTasks(){
+  document.querySelectorAll("[data-chk]").forEach(b=>b.onclick=()=>{
+    const t=state.tasks.find(x=>x.id===b.dataset.chk); t.done=!t.done; save(); render();
+  });
+  document.querySelectorAll("[data-push]").forEach(b=>b.onclick=()=>{
+    const t=state.tasks.find(x=>x.id===b.dataset.push); const i=DAYS.indexOf(t.day);
+    if(i<DAYS.length-1){ t.day=DAYS[i+1]; save(); render(); }
+  });
+  document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+    state.tasks=state.tasks.filter(x=>x.id!==b.dataset.del); save(); render();
+  });
+  bindEditable();
+}
+
+function renderMats(){
+  $("#main").innerHTML=Object.keys(MATS).filter(m=>filters[m]).map(m=>{
+    const ts=state.tasks.filter(t=>t.mat===m).sort((a,b)=>a.day<b.day?-1:1);
+    if(!ts.length)return"";
+    const done=ts.filter(t=>t.done).length, pct=Math.round(done/ts.length*100);
+    const rest=ts.filter(t=>!t.done).reduce((s,t)=>s+t.min,0);
+    return '<div class="mat"><h3 style="color:'+MATS[m].c+'">'+MATS[m].n+'</h3>'+
+      '<div class="eyebrow">'+done+'/'+ts.length+' tâches · '+fmtMin(rest)+' restantes</div>'+
+      '<div class="prog"><i style="width:'+pct+'%;background:'+MATS[m].c+'"></i></div>'+
+      '<ul>'+ts.filter(t=>!hideDone||!t.done).map(t=>'<li class="'+(t.done?"done":"")+'">'+
+        '<span class="d">'+t.day.slice(8)+"/"+t.day.slice(5,7)+'</span><span data-edit="'+t.id+'" role="button" tabindex="0">'+esc(t.title)+'</span></li>').join("")+'</ul></div>';
+  }).join("");
+  bindEditable();
+}
+
+function renderStats(){
+  const tk=todayKey(), fut=state.tasks.filter(t=>!t.done&&t.day>=tk);
+  const h=fut.reduce((s,t)=>s+t.min,0), days=DAYS.filter(k=>k>=tk).length;
+  const done=state.tasks.filter(t=>t.done).length;
+  $("#stats").textContent=done+" tâches faites sur "+state.tasks.length+" · "+fmtMin(h)+
+    " de travail encore planifié sur "+days+" jours, soit "+fmtMin(Math.round(h/days))+" par jour en moyenne.";
+}
+function esc(s){ return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ============ contrôles ============ */
+document.querySelectorAll("#filters [data-m]").forEach(b=>b.onclick=()=>{
+  filters[b.dataset.m]=!filters[b.dataset.m]; b.classList.toggle("on",!!filters[b.dataset.m]); render();
+});
+$("#tglDone").onclick=e=>{hideDone=!hideDone;e.target.textContent=hideDone?"Afficher le fait":"Masquer le fait";e.target.classList.toggle("on",hideDone);render();};
+$("#tglPast").onclick=e=>{showPast=!showPast;e.target.textContent=showPast?"Masquer les jours passés":"Voir les jours passés";e.target.classList.toggle("on",showPast);render();};
+$("#vDay").onclick=()=>{view="day";$("#vDay").className="on";$("#vMat").className="ghost";render();};
+$("#vMat").onclick=()=>{view="mat";$("#vMat").className="on";$("#vDay").className="ghost";render();};
+
+function fillDaySelect(){
+  $("#fD").innerHTML=DAYS.map(k=>'<option value="'+k+'"'+(k===todayKey()?" selected":"")+'>'+labelDay(k)+'</option>').join("");
+}
+let editing=null;
+function openAdd(){
+  editing=null;
+  $("#panelTitle").textContent="Nouvelle tâche"; $("#saveTask").textContent="Ajouter";
+  $("#delTask").style.display="none";
+  $("#fT").value=""; $("#fD").value=todayKey(); $("#fM").value="tfb"; $("#fMin").value=60;
+  $("#addPanel").classList.add("open"); $("#fT").focus();
+}
+function openEdit(id){
+  const t=state.tasks.find(x=>x.id===id); if(!t) return;
+  editing=id;
+  $("#panelTitle").textContent="Modifier la tâche"; $("#saveTask").textContent="Enregistrer";
+  $("#delTask").style.display="";
+  $("#fT").value=t.title; $("#fD").value=t.day; $("#fM").value=t.mat; $("#fMin").value=t.min;
+  $("#addPanel").classList.add("open");
+}
+$("#openAdd").onclick=openAdd;
+$("#delTask").onclick=()=>{
+  if(!editing) return;
+  state.tasks=state.tasks.filter(x=>x.id!==editing);
+  editing=null; $("#addPanel").classList.remove("open"); save(); render();
+};
+$("#closeAdd").onclick=()=>$("#addPanel").classList.remove("open");
+$("#saveTask").onclick=()=>{
+  const txt=$("#fT").value.trim(); if(!txt){$("#fT").focus();return;}
+  const day=$("#fD").value, mat=$("#fM").value, min=+$("#fMin").value||0;
+  if(editing){
+    const t=state.tasks.find(x=>x.id===editing);
+    if(t){ t.title=txt; t.day=day; t.mat=mat; t.min=min; }
+    editing=null;
+  }else{
+    state.tasks.push({id:"u"+Date.now(),day:day,mat:mat,title:txt,min:min,done:false});
+  }
+  $("#fT").value=""; $("#addPanel").classList.remove("open"); save(); render();
+};
+$("#openTools").onclick=()=>$("#toolsPanel").classList.add("open");
+$("#closeTools").onclick=()=>$("#toolsPanel").classList.remove("open");
+$("#expBtn").onclick=()=>{$("#impBox").value=JSON.stringify(state);$("#impBox").select();};
+$("#impBtn").onclick=()=>{
+  try{ const o=JSON.parse($("#impBox").value); if(!Array.isArray(o.tasks)) throw 0;
+    state=o; save(); render(); $("#toolsPanel").classList.remove("open");
+  }catch(e){ alert("Ce JSON n'est pas lisible. Colle un export généré par l'application."); }
+};
+$("#resetBtn").onclick=()=>{ if(confirm("Recharger le plan de base ? Tes ajouts et tes cases cochées seront perdus.")){ state={tasks:seedTasks()}; save(); render(); $("#toolsPanel").classList.remove("open"); } };
+document.querySelectorAll(".panel").forEach(p=>p.onclick=e=>{ if(e.target===p) p.classList.remove("open"); });
+
+boot();
+</script>
+</body>
+</html>
