@@ -230,7 +230,7 @@ input[type=number]{font-family:var(--mono)}
   <button id="vMat" class="ghost">Matières</button>
 </div>
 
-<div class="eyebrow" style="margin:0 0 8px">Touche une tâche pour la modifier · → la reporte au lendemain</div>
+<div class="eyebrow" style="margin:0 0 8px">Touche une tâche pour la modifier · → la reporte, et décale le reste en cascade</div>
 <main id="main"></main>
 
 <p class="note" id="stats"></p>
@@ -296,9 +296,11 @@ const store = {
 /* ============ calendrier ============ */
 const START="2026-07-29", END="2026-09-04";
 const META={
- "2026-07-30":{work:1},"2026-07-31":{work:1},
- "2026-08-01":{off:"Anniversaire — soirée prise",cap:180},
- "2026-08-04":{off:"Parc d'attractions",cap:0},
+ "2026-07-30":{work:1},"2026-07-31":{work:1,cap:150},
+ "2026-08-01":{off:"Anniversaire — soirée prise",cap:240},
+ "2026-08-02":{cap:480},
+"2026-08-03":{cap:480},
+"2026-08-04":{off:"Parc d'attractions",cap:0},
  "2026-08-05":{mile:"RDV promoteur, 11h",cap:330},
  "2026-08-06":{mile:"Entretien 1"},
  "2026-08-08":{work:1},
@@ -319,45 +321,34 @@ const d2 = n => String(n).padStart(2,"0");
 function toDate(s){ const p=s.split("-"); return new Date(+p[0],+p[1]-1,+p[2]); }
 function iso(d){ return d.getFullYear()+"-"+d2(d.getMonth()+1)+"-"+d2(d.getDate()); }
 const DAYS=(()=>{const out=[];let d=toDate(START);const e=toDate(END);while(d<=e){out.push(iso(d));d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);}return out;})();
-function capOf(k){ const m=META[k]||{}; if(m.cap!==undefined) return m.cap; if(m.dead) return 150; if(m.mile) return 240; if(m.work) return 270; return 360; }
+function capOf(k){ const m=META[k]||{}; if(m.cap!==undefined) return m.cap; if(m.dead) return 150; if(m.mile) return 240; if(m.work) return 210; return 360; }
 function todayKey(){ const t=iso(new Date()); if(t<START) return START; if(t>END) return END; return t; }
 
 /* ============ plan de base ============ */
 /* [jour, matière, intitulé, minutes] */
 const SEED=[
-["2026-07-29","tfb","Compléter la problématisation initiale : quatre ou cinq sous-questions en « comment », tirées de mes attentes sur le vécu",30],
-["2026-07-29","tfb","Installer Obsidian sur l'iPad, ouvrir le coffre Journal TFB, vérifier que les liens entre notes fonctionnent",20],
-["2026-07-29","tfb","Relire le compte-rendu zéro dans Obsidian et combler les trois trous signalés",20],
-["2026-07-29","tfb","Confirmer les deux entretiens et fixer une date ferme pour le second",30],
-["2026-07-29","a2","Anglais 2 : faire extraire le voc des Units 1-3 par l'IA depuis le syllabus, vérifier mot à mot, importer dans ton app",60],
-["2026-07-30","tfb","Prendre Obsidian en main : créer une note, poser un lien [[ ]], repérer les liens mentionnés en bas de la note parente",30],
-["2026-07-30","tfb","Récupérer les entretiens publics de Sam (Amnesty, presse) : mon matériau de micro-analyse, et le récit rodé qu'il me servira le 6",20],
-["2026-07-30","tfb","Micro-analyse : deux ou trois mots seulement, 30 min chrono, déplier tous les sens puis en tirer des questions → compte-rendu vert",30],
-["2026-07-30","tfb","Guide de Sam, version 1 : cinq à sept thèmes nus, jamais de question rédigée à l'avance",45],
-["2026-07-30","tfb","Dehet, L'antifascisme — première moitié + fiche de lecture",90],
-["2026-07-30","a3","Anglais 3 : extraire le voc des chapitres 1-2 (CNBC, terminology, genre), vérifier, importer",45],
-["2026-07-31","tfb","Biblio : repérer une quinzaine de textes, en retenir dix — cinq en anglais, cinq en français — tous cités dans le corps du travail",140],
-["2026-07-31","tfb","Guide de Sam v2 : supprimer toute puce qui appelle une opinion plutôt qu'un récit",30],
-["2026-07-31","a2","Anglais 2 : Units 4-6 par le même procédé → la liste est complète",45],
-["2026-07-31","a2","Première session de rappel actif : Units 1-3",45],
-["2026-08-01","tfb","Dehet — seconde moitié + fiche des concepts mobilisables pour le cadre théorique",100],
-["2026-08-01","a3","Récupérer auprès des autres la liste des sujets des présentations orales (OPs) : les sujets d'essai de juin en viennent",20],
-["2026-08-01","a2","Rappel actif : Units 4-6",45],
+["2026-07-31","tfb","Confirmer les deux entretiens et fixer une date ferme pour le second",30],
+["2026-07-31","tfb","Journal : compléter la problématisation (quatre ou cinq sous-questions en « comment ») et combler les trois trous du compte-rendu zéro",40],
+["2026-07-31","tfb","Micro-analyse : récupérer un entretien public de Sam, y isoler deux ou trois mots, 30 min chrono, déplier tous les sens → compte-rendu vert",45],
+["2026-07-31","a3","Récupérer auprès des autres la liste des sujets des présentations orales (OPs)",20],
+["2026-08-01","tfb","Guide de Sam, v1 puis v2 : cinq à sept thèmes nus, puis relire et retirer tout ce qui appelle une opinion plutôt qu'un récit",60],
+["2026-08-01","tfb","Biblio : repérer une quinzaine de textes, en retenir dix — cinq en anglais, cinq en français — tous cités dans le corps du travail",140],
+["2026-08-02","tfb","Dehet, L'antifascisme — lecture complète en une traite + fiche des concepts mobilisables pour le cadre théorique",150],
 ["2026-08-02","tfb","Lire les 3 textes clés + une fiche courte pour chacun",120],
 ["2026-08-02","tfb","Cadre théorique version 0 : des concepts sensibilisants, pas un modèle à tester, aucune hypothèse formulée",90],
-["2026-08-02","a2","Refaire deux listenings du cours",45],
-["2026-08-02","a3","Écoute : NPR, One-Child Policy — gap-fill et vrai/faux",45],
-["2026-08-02","a3","Anglais 3 : extraire le voc des chapitres 3-5 + word building, vérifier, importer",45],
+["2026-08-02","a2","Anglais 2 : extraire le voc des Units 1-6 d'une traite depuis le syllabus, vérifier mot à mot, importer dans ton app",90],
 ["2026-08-03","tfb","Lire les textes restants + fiches courtes (les anglais prennent plus de temps, garde-les pour les moments où tu es frais)",120],
 ["2026-08-03","tfb","Matériaux et méthodes : le scénario sur le déroulement de la recherche (350-400 mots) en fait l'ossature — une démarche inspirée de la théorisation ancrée, adaptée à l'échelle du travail",90],
 ["2026-08-03","tfb","Préparer le RDV : question de recherche, guide, plan, et les points à trancher — coupler les parties 3 et 4 ? consentement et anonymat sur un terrain judiciaire ?",45],
-["2026-08-03","a2","Reprise des mots ratés, Units 1-6",45],
-["2026-08-03","a2","GABi : comparatifs et propositions relatives",60],
+["2026-08-03","a2","Anglais 2 : première session de rappel actif, Units 1-6",70],
+["2026-08-03","a2","Anglais 2 : deux listenings du cours + reprise des mots ratés, Units 1-6",80],
+["2026-08-03","a3","Anglais 3 : extraire le voc des chapitres 1-5 + word building, vérifier et importer",75],
 ["2026-08-04","vie","Parc d'attractions — aucune tâche, et c'est voulu",0],
 ["2026-08-05","tfb","RDV PROMOTEUR 11h : valider la question, le nombre d'entretiens, la version allégée de la méthode et le protocole de consentement",60],
 ["2026-08-05","tfb","Noter ses retours dans le journal de bord juste après, avant d'oublier",20],
 ["2026-08-05","tfb","Répéter le guide à voix haute + protocole : document d'information, consentement enregistré en début d'entretien, anonymat, stockage des fichiers",60],
 ["2026-08-05","tfb","Cadre théorique version 1 : intégrer les lectures",90],
+["2026-08-05","tfb","Obsidian : installer, ouvrir le coffre, créer une note et poser un lien",30],
 ["2026-08-05","a3","Écoute Wyman + prépositions et phrasal verbs",45],
 ["2026-08-06","tfb","ENTRETIEN 1",120],
 ["2026-08-06","tfb","Notes à chaud dans l'heure : ce qui m'a surpris, ce que je n'ai pas compris, l'ambiance et le lieu",30],
@@ -370,14 +361,13 @@ const SEED=[
 ["2026-08-08","tfb","Note de codage (jaune) : ce qui ressort, et surtout lesquelles de mes prédictions du 29 juillet ne se sont pas réalisées",30],
 ["2026-08-08","tfb","Guide de Claire, nouveau rouge ancré sur les codages de l'entretien 1 : cette fois, chercher la variation et les situations qui la conditionnent",30],
 ["2026-08-08","a2","Étudier le voc Units 1-3 (rappel actif, pas relecture)",90],
-["2026-08-08","a2","Grammaire : temps du passé et voix passive",60],
+["2026-08-15","a2","Grammaire : temps du passé et voix passive",60],
 ["2026-08-09","tfb","ENTRETIEN 2",120],
 ["2026-08-09","tfb","Notes à chaud",30],
 ["2026-08-09","tfb","Transférer, effacer du téléphone, transcription locale",60],
 ["2026-08-10","tfb","Transcription utile de l'entretien 2",100],
 ["2026-08-10","tfb","Étiquetage de l'entretien 2",120],
 ["2026-08-10","a2","Étudier le voc Units 4-6",90],
-["2026-08-10","a3","Rappel actif chapitres 3-5",45],
 ["2026-08-11","tfb","Table des propriétés : les situations en lignes, les étiquettes en colonnes",90],
 ["2026-08-11","tfb","Contrastes entre les deux entretiens : nommer les cas de figure, comme « rush » ou « indisponibilité » chez Lejeune",60],
 ["2026-08-11","tfb","Une phrase à trois verbes par articulation, et les cas négatifs reportés sous le schéma",30],
@@ -389,9 +379,11 @@ const SEED=[
 ["2026-08-13","tfb","Scénario analytique, seconde moitié + confrontation à la littérature : relever les cohérences et les incohérences",180],
 ["2026-08-13","tfb","Conclusion : réponse à la question, limites (deux entretiens, pas de saturation, pas d'échantillonnage théorique), perspectives",60],
 ["2026-08-13","a2","Sight text chronométré : les 8 gaps de phrases + vrai/faux/non mentionné AVEC justification écrite",60],
+["2026-08-13","a2","Anglais 2 : GABi — comparatifs et propositions relatives",60],
 ["2026-08-14","tfb","Introduction (écrite en dernier) + titre sans point final, différent de la question de recherche",90],
 ["2026-08-14","tfb","Relecture liste noire : aucun « nous voyons que », aucun « il est à noter que », aucune quantification implicite, aucun nom commun au pluriel qui cache une rubrique",90],
 ["2026-08-14","a3","APA : compléter des citations dans un texte à partir d'une liste de références (le format exact de janvier)",90],
+["2026-08-14","a3","Anglais 3 : écoute NPR, One-Child Policy — gap-fill et vrai/faux",45],
 ["2026-08-15","tfb","Résumé de 250 mots + 4-6 mots-clés",45],
 ["2026-08-15","tfb","Références APA + citations dans le corps du texte",75],
 ["2026-08-15","tfb","Mise en forme : TNR 12, interligne 1,5, marges 2,5, extraits en italique et anonymisés",75],
@@ -404,17 +396,15 @@ const SEED=[
 ["2026-08-16","a3","Lecture : CNBC + Should Flogging Be an Alternative to Prison?",60],
 ["2026-08-17","tfb","Dépôt sur Ultra + mail au promoteur (même objet que le nom du fichier)",45],
 ["2026-08-17","a2","Décortiquer le sample de juin 2023 : barème section par section, et ce qui rapporte le plus",45],
-["2026-08-17","a2","Reprendre les listenings les moins réussis",60],
 ["2026-08-18","a2","Voc : reprise complète en rappel actif",90],
 ["2026-08-18","a2","Grammaire : les 11 catégories du « circle the best form » (verb patterns, linking words, passif, temps, comparatifs, prépositions, articles, pronoms, relatives, adverbes, accords)",90],
 ["2026-08-18","a2","Word-building, collocations, phrasal verbs, antonymes et synonymes : une passe sur les exercices du cours",60],
 ["2026-08-18","a2","Essai chronométré 250 mots, 3 à 5 paragraphes — plan d'abord, sujet type déviance et changement social",60],
-["2026-08-18","a2","Écoute : trois listenings du cours",60],
 ["2026-08-19","a2","Voc : uniquement les mots ratés",60],
 ["2026-08-19","a2","Gap-fill de verbes : bonne forme, bon temps, bonne voix (la section à 9 points)",60],
 ["2026-08-19","a2","Définitions en tes propres mots, sans réutiliser les mots du terme : 15 concepts du cours",45],
 ["2026-08-19","a2","Décrire des chiffres et des tendances : pie chart, bar chart, pictogram (Unit 4)",30],
-["2026-08-19","a2","Sight text : antécédents de pronoms, synonymes à retrouver, expressions à expliquer en phrases complètes",45],
+["2026-08-18","a2","Sight text : antécédents de pronoms, synonymes à retrouver, expressions à expliquer en phrases complètes",45],
 ["2026-08-20","a2","Examen blanc complet sur le sample de juin 2023, en conditions réelles",180],
 ["2026-08-20","a2","Correction et reprise des erreurs",90],
 ["2026-08-20","a2","Second essai chronométré sur un autre sujet (migration ou réfugiés climatiques)",45],
@@ -422,7 +412,6 @@ const SEED=[
 ["2026-08-21","a2","ÉCRIT ANGLAIS 2",0],
 ["2026-08-21","a3","Cartographier les deux épreuves : janvier (APA, synthèse, références, prépositions) + juin (lecture, écoute, essai) — l'écrit d'août couvre les deux",45],
 ["2026-08-21","a3","Étudier le voc chapitres 1-2",90],
-["2026-08-22","a3","Voc chapitres 3-5 + word building",90],
 ["2026-08-22","a3","Écoute au format juin : gap-fill, vrai/faux, questions ouvertes",90],
 ["2026-08-22","a3","Synthèse chronométrée 250-300 mots : 2 citations courtes, auteur en APA, 2 reporting verbs différents, langue non biaisée",90],
 ["2026-08-22","a3","Prépositions et nombres : le gap-fill type janvier",45],
@@ -492,6 +481,20 @@ function labelDay(k){ const d=toDate(k); return JOURS[d.getDay()]+" "+d.getDate(
 function tasksOf(k){ return state.tasks.filter(t=>t.day===k); }
 function loadOf(k){ return tasksOf(k).reduce((s,t)=>s+(t.done?0:t.min),0); }
 
+function backlog(){
+  const tk=todayKey();
+  return state.tasks.filter(t=>t.day<tk && !t.done && !LOCKED.test(t.title));
+}
+function backlogBanner(){
+  const b=backlog(); if(!b.length) return "";
+  const mins=b.reduce((s,t)=>s+t.min,0);
+  const days=[...new Set(b.map(t=>t.day))].sort();
+  return '<div id="backlog" style="margin:0 0 14px;padding:14px;border-radius:14px;border:1px solid rgba(200,60,60,.4);background:rgba(200,60,60,.08)">'+
+    '<div style="font-weight:600;margin-bottom:4px">'+b.length+' tâche'+(b.length>1?'s':'')+' en retard · '+fmtMin(mins)+'</div>'+
+    '<div style="font-size:13px;opacity:.8;margin-bottom:10px">'+days.map(labelDay).join(' · ')+'</div>'+
+    '<button data-catchup="1" style="font-size:13px;padding:7px 12px;border-radius:9px;border:1px solid rgba(128,128,128,.4);background:none;color:inherit;cursor:pointer">Replacer dans les jours à venir</button>'+
+    '</div>';
+}
 function render(){
   renderHead(); renderBande();
   if(view==="day") renderDays(DAYS.filter(k=>showPast||k>=todayKey()));
@@ -499,6 +502,32 @@ function render(){
   else if(view==="month") renderMonth();
   else renderMats();
   renderStats();
+  if(view==="day"){
+    const bb=backlogBanner();
+    if(bb){ $("#main").insertAdjacentHTML("afterbegin",bb);
+      const btn=document.querySelector("[data-catchup]");
+      if(btn) btn.onclick=()=>{
+        const b=backlog();
+        const src=[...new Set(b.map(t=>t.day))].sort();
+        b.forEach(t=>t.day=src[0]);          // on les regroupe
+        const r=redistribute(src[0]);
+        let forced=0;
+        if(r.stuck.length){
+          const slack=r.horizon.reduce((s,d)=>s+Math.max(0,capOf(d)-loadOf(d)),0);
+          const need=r.stuck.reduce((s,t)=>s+t.min,0);
+          if(confirm("Il reste "+fmtMin(slack)+" de marge avant le prochain jalon, pour "+fmtMin(need)+" à recaser.\n\nLes répartir quand même en dépassant ?\n\nAnnuler = les laisser et décider quoi couper.")){
+            r.stuck.forEach(t=>{ let best=r.horizon[0];
+              r.horizon.forEach(d=>{ if(loadOf(d)-capOf(d)<loadOf(best)-capOf(best)) best=d; });
+              if(best){ t.day=best; forced++; } });
+          } else { r.stuck.forEach(t=>t.day=todayKey()); }
+        }
+        save(); render();
+        toast(r.moved.length+" replacée"+(r.moved.length>1?"s":"")+
+          (forced?", "+forced+" en dépassement":
+           (r.stuck.length?", "+r.stuck.length+" ramenée"+(r.stuck.length>1?"s":"")+" à aujourd'hui — à arbitrer":""))+".");
+      };
+    }
+  }
 }
 
 function renderHead(){
@@ -547,6 +576,9 @@ function dayCard(k){
     '</div>'+
     (shown.length?'<ul class="tasks">'+shown.map(taskRow).join("")+'</ul>'
       :'<p class="empty">'+(all.length?"Rien à afficher avec ces filtres.":"Journée libre — à toi de la remplir.")+'</p>')+
+    (all.some(t=>!t.done&&!LOCKED.test(t.title))&&k<DAYS[DAYS.length-1]
+      ? '<div style="padding:0 14px 12px"><button class="ghost" data-pushall="'+k+'" style="font-size:13px;padding:7px 12px;border-radius:9px;border:1px solid rgba(128,128,128,.35);background:none;color:inherit;cursor:pointer">Tout reporter</button></div>'
+      : '')+
   '</section>';
 }
 function afterDays(){
@@ -665,13 +697,120 @@ function bindEditable(){
     el.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openEdit(el.dataset.edit); } };
   });
 }
+/* ==== report en cascade ==== */
+const LOCKED=/^(ENTRETIEN|RDV PROMOTEUR|DÉPÔT|DEPOT|ÉCRIT|ECRIT|ORAL|Examen)/i;
+function nextOpenDay(k){
+  const i=DAYS.indexOf(k);
+  for(let j=i+1;j<DAYS.length;j++){ if(capOf(DAYS[j])>0) return DAYS[j]; }
+  return null;
+}
+function pickDisplaced(day,overflow,moved){
+  const cand=tasksOf(day).filter(t=>!t.done && !LOCKED.test(t.title) && !moved.has(t.id));
+  if(!cand.length) return null;
+  const rank=t=>(t.mat==="tfb"?1:0);            // on décale l'anglais avant le TFB
+  const fits=cand.filter(t=>t.min>=overflow).sort((a,b)=>rank(a)-rank(b)||a.min-b.min);
+  if(fits.length) return fits[0];
+  return cand.slice().sort((a,b)=>rank(a)-rank(b)||b.min-a.min)[0];
+}
+function resolveOverflow(startDay,moved){
+  const log=[]; let day=startDay,guard=0;
+  while(day && guard++<25){
+    const over=loadOf(day)-capOf(day);
+    if(over<=0) break;
+    const t=pickDisplaced(day,over,moved);
+    if(!t) break;
+    const nd=nextOpenDay(day);
+    if(!nd) break;
+    t.day=nd; moved.add(t.id); log.push(t);
+    day=nd;
+  }
+  return log;
+}
+let toastT=null;
+function toast(msg){
+  let el=document.getElementById("toast");
+  if(!el){ el=document.createElement("div"); el.id="toast";
+    el.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:24px;max-width:min(92vw,520px);background:#1c1c1e;color:#fff;padding:12px 16px;border-radius:12px;font-size:14px;line-height:1.35;z-index:9999;box-shadow:0 8px 30px rgba(0,0,0,.35);opacity:0;transition:opacity .18s";
+    document.body.appendChild(el); }
+  el.textContent=msg; el.style.opacity="1";
+  clearTimeout(toastT); toastT=setTimeout(()=>{el.style.opacity="0";},4200);
+}
+
+function horizonAfter(day){
+  // une tâche ne saute pas par-dessus un jalon daté, ni au-delà de 5 jours ouverts
+  const open=DAYS.filter(k=>k>day && k>=todayKey() && capOf(k)>0);
+  const out=[];
+  for(const k of open){
+    const m=META[k]||{};
+    if(m.mile||m.dead) break;
+    out.push(k);
+    if(out.length>=5) break;
+  }
+  return out;
+}
+function redistribute(day){
+  const pool=tasksOf(day).filter(t=>!t.done && !LOCKED.test(t.title));
+  if(!pool.length) return {moved:[],stuck:[]};
+  const rank=t=>(t.mat==="tfb"?0:1);   // le TFB retrouve un créneau en premier
+  pool.sort((a,b)=>rank(a)-rank(b));
+  const after=horizonAfter(day);
+  const moved=[],stuck=[];
+  pool.forEach(t=>{
+    const slot=after.find(k=>loadOf(k)+t.min<=capOf(k));
+    if(slot){ t.day=slot; moved.push(t); }
+    else stuck.push(t);          // reste sur place : à toi de trancher
+  });
+  return {moved,stuck,horizon:after};
+}
+
 function bindTasks(){
   document.querySelectorAll("[data-chk]").forEach(b=>b.onclick=()=>{
     const t=state.tasks.find(x=>x.id===b.dataset.chk); t.done=!t.done; save(); render();
   });
   document.querySelectorAll("[data-push]").forEach(b=>b.onclick=()=>{
-    const t=state.tasks.find(x=>x.id===b.dataset.push); const i=DAYS.indexOf(t.day);
-    if(i<DAYS.length-1){ t.day=DAYS[i+1]; save(); render(); }
+    const t=state.tasks.find(x=>x.id===b.dataset.push);
+    const nd=nextOpenDay(t.day);
+    if(!nd){ toast("Il n'y a pas de jour ouvert après celui-ci."); return; }
+    t.day=nd;
+    const moved=new Set([t.id]);
+    const log=resolveOverflow(nd,moved);
+    save(); render();
+    if(!log.length){ toast("Reporté à "+labelDay(nd)+"."); }
+    else {
+      const names=log.map(x=>"« "+(x.title.length>34?x.title.slice(0,34)+"…":x.title)+" » → "+labelDay(x.day));
+      toast("Reporté à "+labelDay(nd)+". Pour rester sous ta capacité : "+names.join(" ; "));
+    }
+    const last=log.length?log[log.length-1].day:nd;
+    if(loadOf(last)>capOf(last)) toast(labelDay(last)+" reste au-dessus de ta capacité : plus rien de déplaçable.");
+  });
+  document.querySelectorAll("[data-pushall]").forEach(b=>b.onclick=(e)=>{
+    e.stopPropagation();
+    const k=b.dataset.pushall;
+    const n=tasksOf(k).filter(t=>!t.done&&!LOCKED.test(t.title)).length;
+    if(!confirm("Reporter les "+n+" tâche"+(n>1?"s":"")+" non faite"+(n>1?"s":"")+" de "+labelDay(k)+" ?\n\nChacune ira dans le premier créneau libre, sans faire déborder les jours suivants.")) return;
+    const r=redistribute(k);
+    let forced=0;
+    if(r.stuck.length){
+      const slack=r.horizon.reduce((s,d)=>s+Math.max(0,capOf(d)-loadOf(d)),0);
+      const need=r.stuck.reduce((s,t)=>s+t.min,0);
+      const last=r.horizon.length?labelDay(r.horizon[r.horizon.length-1]):"le prochain jalon";
+      if(confirm("Il reste "+fmtMin(slack)+" de marge d'ici "+last+", pour "+fmtMin(need)+" à recaser.\n\nLes répartir quand même, en dépassant la capacité de ces jours ?\n\nAnnuler = les laisser sur place et décider quoi couper."))
+      {
+        r.stuck.forEach(t=>{
+          let best=r.horizon[0];
+          r.horizon.forEach(d=>{ if(loadOf(d)-capOf(d)<loadOf(best)-capOf(best)) best=d; });
+          if(best){ t.day=best; forced++; }
+        });
+      }
+    }
+    save(); render();
+    const dest=[...new Set(r.moved.map(t=>t.day))].sort();
+    let msg=r.moved.length+" tâche"+(r.moved.length>1?"s":"")+" replacée"+(r.moved.length>1?"s":"")+
+      (dest.length?" jusqu'au "+labelDay(dest[dest.length-1]):"")+".";
+    if(forced) msg+=" "+forced+" placée"+(forced>1?"s":"")+" en dépassement.";
+    else if(r.stuck.length) msg+=" "+r.stuck.length+" reste"+(r.stuck.length>1?"nt":"")+
+      " sur place : d'ici le prochain jalon, la semaine est pleine. Il faut couper ou raccourcir.";
+    toast(msg);
   });
   document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
     state.tasks=state.tasks.filter(x=>x.id!==b.dataset.del); save(); render();
