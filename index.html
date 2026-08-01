@@ -266,7 +266,13 @@ input[type=number]{font-family:var(--mono)}
 <div class="panel" id="toolsPanel">
   <div class="panel-in">
     <div class="eyebrow">Outils</div>
-    <div class="row" style="margin-top:12px"><button id="expBtn">Exporter en JSON</button></div>
+    <div class="row" style="margin-top:12px"><button id="icloudBtn">Sauvegarder dans iCloud</button></div>
+    <p class="note">Ouvre le partage iOS : choisis <b>Enregistrer dans Fichiers</b> → iCloud Drive, et écrase toujours le même fichier.</p>
+    <div class="row" style="margin-top:12px"><button class="ghost" id="fileBtn">Charger depuis iCloud</button></div>
+    <input type="file" id="fileInp" accept=".json,application/json" style="display:none">
+    <p class="note">Règle d'or : <b>sauvegarder en fermant</b>, <b>charger en ouvrant</b>. Dans l'autre sens, tu écrases par une version périmée.</p>
+    <label style="margin-top:14px;display:block">Export manuel</label>
+    <div class="row"><button class="ghost" id="expBtn">Copier le JSON</button></div>
     <label for="impBox">Importer un JSON</label>
     <textarea id="impBox" rows="4" placeholder="Colle ici un export précédent"></textarea>
     <div class="row" style="margin-top:8px"><button id="impBtn">Importer</button></div>
@@ -357,8 +363,6 @@ const SEED=[
 ["2026-08-05","tfb","Noter ses retours dans le journal de bord juste après, avant d'oublier",20],
 ["2026-08-05","tfb","Répéter le guide à voix haute + protocole : document d'information, consentement enregistré en début d'entretien, anonymat, stockage des fichiers",60],
 ["2026-08-05","tfb","Cadre théorique version 1 : intégrer les lectures",90],
-["2026-08-05","tfb","Obsidian : installer et ouvrir le coffre Journal TFB",15],
-["2026-08-05","tfb","Obsidian : créer une note, poser un lien, repérer les liens mentionnés",15],
 ["2026-08-05","a3","Écoute Wyman + prépositions et phrasal verbs",45],
 ["2026-08-06","tfb","ENTRETIEN 1",120],
 ["2026-08-06","tfb","Notes à chaud dans l'heure : ce qui m'a surpris, ce que je n'ai pas compris, l'ambiance et le lieu",30],
@@ -904,6 +908,41 @@ $("#saveTask").onclick=()=>{
 };
 $("#openTools").onclick=()=>$("#toolsPanel").classList.add("open");
 $("#closeTools").onclick=()=>$("#toolsPanel").classList.remove("open");
+function planFile(){
+  const stamp=new Date().toISOString().slice(0,16).replace(/[:T]/g,"-");
+  const blob=new Blob([JSON.stringify(state,null,1)],{type:"application/json"});
+  return {blob, name:"blocus-plan.json", stamp};
+}
+$("#icloudBtn").onclick=async()=>{
+  const {blob,name}=planFile();
+  const file=new File([blob],name,{type:"application/json"});
+  try{
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:"Plan blocus"});
+      toast("Choisis « Enregistrer dans Fichiers » → iCloud Drive, et écrase blocus-plan.json.");
+      return;
+    }
+  }catch(e){ if(e && e.name==="AbortError") return; }
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+  toast("Fichier téléchargé — range-le dans iCloud Drive.");
+};
+$("#fileBtn").onclick=()=>$("#fileInp").click();
+$("#fileInp").onchange=async(e)=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  try{
+    const txt=await f.text();
+    const d=JSON.parse(txt);
+    if(!d||!Array.isArray(d.tasks)) throw new Error("format");
+    const done=d.tasks.filter(t=>t.done).length;
+    if(!confirm("Charger cette sauvegarde ?\n\n"+d.tasks.length+" tâches, "+done+" déjà faites.\nTon état actuel sera remplacé.")) { e.target.value=""; return; }
+    state=d; save(); render();
+    toast("Sauvegarde chargée : "+d.tasks.length+" tâches, "+done+" faites.");
+  }catch(err){ toast("Fichier illisible — ce n'est pas un export du plan."); }
+  e.target.value="";
+};
 $("#expBtn").onclick=()=>{$("#impBox").value=JSON.stringify(state);$("#impBox").select();};
 $("#impBtn").onclick=()=>{
   try{ const o=JSON.parse($("#impBox").value); if(!Array.isArray(o.tasks)) throw 0;
