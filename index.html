@@ -232,6 +232,7 @@ input[type=number]{font-family:var(--mono)}
   <button id="vWeek" class="ghost">Semaine</button>
   <button id="vMonth" class="ghost">Mois</button>
   <button id="vMat" class="ghost">Matières</button>
+  <button id="vBloc" class="ghost">Blocs</button>
 </div>
 
 <div class="eyebrow" style="margin:0 0 8px">Touche une tâche pour la modifier · → la reporte, et décale le reste en cascade</div>
@@ -519,7 +520,7 @@ function render(){
   if(view==="day") renderDays(DAYS.filter(k=>showPast||k>=todayKey()));
   else if(view==="week") renderWeek();
   else if(view==="month") renderMonth();
-  else renderMats();
+  else if(view==="mat") renderMats();   else renderBlocs();
   renderStats();
   if(view==="day"){
     const bb=backlogBanner();
@@ -876,7 +877,32 @@ function renderMats(){
   }).join("");
   bindEditable();
 }
-
+function renderBlocs(){
+  const g={};
+  state.tasks.filter(t=>filters[t.mat]).forEach(t=>{ const b=t.bloc||"Sans bloc"; (g[b]=g[b]||[]).push(t); });
+  const names=Object.keys(g).sort((a,b)=>{
+    const da=g[a].reduce((m,t)=>t.day<m?t.day:m,"9999"), db=g[b].reduce((m,t)=>t.day<m?t.day:m,"9999");
+    return da<db?-1:da>db?1:a.localeCompare(b);
+  });
+  $("#main").innerHTML=names.map(b=>{
+    const ts=g[b].slice().sort((x,y)=>x.day<y.day?-1:1);
+    const done=ts.filter(t=>t.done).length, pct=Math.round(done/ts.length*100);
+    const rest=ts.filter(t=>!t.done).reduce((s,t)=>s+t.min,0);
+    const per={}; ts.forEach(t=>per[t.mat]=(per[t.mat]||0)+t.min);
+    const dom=Object.keys(per).sort((x,y)=>per[y]-per[x])[0];
+    const a=ts[0].day, z=ts[ts.length-1].day;
+    const span=a===z?labelDay(a):labelDay(a)+" → "+labelDay(z);
+    const rows=ts.filter(t=>!hideDone||!t.done);
+    return '<div class="mat"><h3 style="color:'+MATS[dom].c+'">'+esc(b)+'</h3>'+
+      '<div class="eyebrow">'+done+'/'+ts.length+' tâches · '+fmtMin(rest)+' restantes · '+span+'</div>'+
+      '<div class="prog"><i style="width:'+pct+'%;background:'+MATS[dom].c+'"></i></div>'+
+      '<ul>'+rows.map(t=>'<li class="'+(t.done?"done":"")+'">'+
+        '<span class="d">'+t.day.slice(8)+"/"+t.day.slice(5,7)+'</span>'+
+        '<span data-edit="'+t.id+'" role="button" tabindex="0">'+esc(t.title)+'</span></li>').join("")+
+      '</ul></div>';
+  }).join("");
+  bindEditable();
+}
 function renderStats(){
   const tk=todayKey(), fut=state.tasks.filter(t=>!t.done&&t.day>=tk);
   const h=fut.reduce((s,t)=>s+t.min,0), days=DAYS.filter(k=>k>=tk).length;
@@ -892,7 +918,7 @@ document.querySelectorAll("#filters [data-m]").forEach(b=>b.onclick=()=>{
 });
 $("#tglDone").onclick=e=>{hideDone=!hideDone;e.target.textContent=hideDone?"Afficher le fait":"Masquer le fait";e.target.classList.toggle("on",hideDone);render();};
 $("#tglPast").onclick=e=>{showPast=!showPast;e.target.textContent=showPast?"Masquer les jours passés":"Voir les jours passés";e.target.classList.toggle("on",showPast);render();};
-const VIEWS={vDay:"day",vWeek:"week",vMonth:"month",vMat:"mat"};
+const VIEWS={vDay:"day",vWeek:"week",vMonth:"month",vMat:"mat",vBloc:"bloc"};
 function setView(id){
   view=VIEWS[id];
   Object.keys(VIEWS).forEach(x=>{ $("#"+x).className = x===id?"on":"ghost"; });
