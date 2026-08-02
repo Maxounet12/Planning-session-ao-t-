@@ -81,7 +81,7 @@ button.tiny{font-size:10px;padding:4px 7px}
 .day.is-off{background:transparent;border-style:dashed}
 .day-head{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-bottom:1px solid var(--rule);cursor:pointer}
 .day.collapsed .day-head{border-bottom:0}
-.day.collapsed .tasks,.day.collapsed .empty{display:none}
+.day.collapsed .tasks,.day.collapsed .empty,.day.collapsed .bloc-head{display:none}
 .task .body{cursor:pointer}
 .mat li span:last-child{cursor:pointer}
 .day-date{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
@@ -94,6 +94,10 @@ button.tiny{font-size:10px;padding:4px 7px}
 .flag.dead{color:var(--alert);background:rgba(179,38,30,.07)}
 .flag.work{color:var(--ink-soft)}
 .tasks{list-style:none;margin:0;padding:2px 0}
+.bloc-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:9px 12px 3px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+.bloc-head b{font-weight:600;letter-spacing:0;text-transform:none;font-size:14px;color:var(--ink)}
+.tasks.sub .task{padding-left:26px;position:relative}
+.tasks.sub .task::before{content:"";position:absolute;left:14px;top:0;bottom:0;width:2px;background:rgba(128,128,128,.28)}
 .task{display:flex;gap:9px;align-items:flex-start;padding:7px 12px;border-bottom:1px solid rgba(201,206,197,.55)}
 .task:last-child{border-bottom:0}
 .task .box{flex:0 0 auto;width:17px;height:17px;border:1.5px solid var(--ink-soft);background:transparent;padding:0;margin-top:2px;cursor:pointer}
@@ -255,6 +259,9 @@ input[type=number]{font-family:var(--mono)}
     </div>
     <label for="fMin">Durée estimée (minutes)</label>
     <input id="fMin" type="number" min="5" step="5" value="60">
+        <label for="fB">Bloc (facultatif)</label>
+    <input id="fB" type="text" list="blocList" placeholder="Ex. : Lire $2 a Day">
+    <datalist id="blocList"></datalist>
     <div class="row" style="margin-top:16px">
       <button class="primary" id="saveTask" style="background:var(--ink);color:var(--card)">Ajouter</button>
       <button class="ghost" id="delTask" style="display:none">Supprimer</button>
@@ -586,7 +593,7 @@ function dayCard(k){
       '<div class="day-meta">'+fmtMin(load)+' / '+fmtMin(cap)+'<br>'+done+'/'+all.length+' fait'+
         '<span class="load'+(load>cap?" over":"")+'"><i style="width:'+pct+'%"></i></span></div>'+
     '</div>'+
-    (shown.length?'<ul class="tasks">'+shown.map(taskRow).join("")+'</ul>'
+    (shown.length? groupedTasks(shown)
       :'<p class="empty">'+(all.length?"Rien à afficher avec ces filtres.":"Journée libre — à toi de la remplir.")+'</p>')+
     (all.some(t=>!t.done&&!LOCKED.test(t.title))&&k<DAYS[DAYS.length-1]
       ? '<div style="padding:0 14px 12px"><button class="ghost" data-pushall="'+k+'" style="font-size:13px;padding:7px 12px;border-radius:9px;border:1px solid rgba(128,128,128,.35);background:none;color:inherit;cursor:pointer">Tout reporter</button></div>'
@@ -693,6 +700,31 @@ function goToDay(k){
   setView("vDay");
   const el=document.getElementById("d"+k);
   if(el){ el.classList.remove("collapsed"); el.scrollIntoView({behavior:"smooth",block:"start"}); }
+}
+  function blocStats(name){
+  const all=state.tasks.filter(t=>t.bloc===name);
+  const done=all.filter(t=>t.done).length;
+  const left=all.reduce((s,t)=>s+(t.done?0:t.min),0);
+  return done+"/"+all.length+" fait · "+fmtMin(left)+" restant";
+}
+function groupedTasks(list){
+  const L=list.slice().sort((a,b)=>(a.bloc||"\uffff").localeCompare(b.bloc||"\uffff"));
+  const out=[]; let i=0;
+  while(i<L.length){
+    if(!L[i].bloc){
+      const solo=[]; while(i<L.length&&!L[i].bloc) solo.push(L[i++]);
+      out.push('<ul class="tasks">'+solo.map(taskRow).join("")+'</ul>');
+    }else{
+      const b=L[i].bloc, grp=[]; while(i<L.length&&L[i].bloc===b) grp.push(L[i++]);
+      out.push('<div class="bloc-head"><b>'+esc(b)+'</b><span>'+blocStats(b)+'</span></div>'+
+               '<ul class="tasks sub">'+grp.map(taskRow).join("")+'</ul>');
+    }
+  }
+  return out.join("");
+}
+function fillBlocList(){
+  const s=[...new Set(state.tasks.map(t=>t.bloc).filter(Boolean))].sort();
+  $("#blocList").innerHTML=s.map(b=>'<option value="'+esc(b)+'">').join("");
 }
 
 function taskRow(t){
@@ -876,7 +908,7 @@ function openAdd(){
   editing=null;
   $("#panelTitle").textContent="Nouvelle tâche"; $("#saveTask").textContent="Ajouter";
   $("#delTask").style.display="none";
-  $("#fT").value=""; $("#fD").value=todayKey(); $("#fM").value="tfb"; $("#fMin").value=60;
+  $("#fT").value=""; $("#fD").value=todayKey(); $("#fM").value="tfb"; $("#fMin").value=60; $("#fB").value=""; fillBlocList();
   $("#addPanel").classList.add("open"); $("#fT").focus();
 }
 function openEdit(id){
@@ -884,7 +916,7 @@ function openEdit(id){
   editing=id;
   $("#panelTitle").textContent="Modifier la tâche"; $("#saveTask").textContent="Enregistrer";
   $("#delTask").style.display="";
-  $("#fT").value=t.title; $("#fD").value=t.day; $("#fM").value=t.mat; $("#fMin").value=t.min;
+  $("#fT").value=t.title; $("#fD").value=t.day; $("#fM").value=t.mat; $("#fMin").value=t.min; $("#fB").value=t.bloc||""; fillBlocList();
   $("#addPanel").classList.add("open");
 }
 $("#openAdd").onclick=openAdd;
@@ -896,13 +928,13 @@ $("#delTask").onclick=()=>{
 $("#closeAdd").onclick=()=>$("#addPanel").classList.remove("open");
 $("#saveTask").onclick=()=>{
   const txt=$("#fT").value.trim(); if(!txt){$("#fT").focus();return;}
-  const day=$("#fD").value, mat=$("#fM").value, min=+$("#fMin").value||0;
+  const day=$("#fD").value, mat=$("#fM").value, min=+$("#fMin").value||0, bloc=$("#fB").value.trim();
   if(editing){
     const t=state.tasks.find(x=>x.id===editing);
-    if(t){ t.title=txt; t.day=day; t.mat=mat; t.min=min; }
+    if(t){ t.title=txt; t.day=day; t.mat=mat; t.min=min; t.bloc=bloc; }
     editing=null;
   }else{
-    state.tasks.push({id:"u"+Date.now(),day:day,mat:mat,title:txt,min:min,done:false});
+    state.tasks.push({id:"u"+Date.now(),day:day,mat:mat,title:txt,min:min,bloc:bloc,done:false});
   }
   $("#fT").value=""; $("#addPanel").classList.remove("open"); save(); render();
 };
